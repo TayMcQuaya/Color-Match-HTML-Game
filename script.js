@@ -230,14 +230,21 @@ function showAchievementPopup(text) {
 }
 
 function checkAchievements() {
-  achievements.forEach(achievement => {
-    if (!achievement.unlocked && achievement.condition(score, streak, timeLeft)) {
-      achievement.unlocked = true;
-      telegram.HapticFeedback.notificationOccurred('success');
-      showAchievementPopup(`Achievement Unlocked: ${achievement.name}`);
+    let newAchievementUnlocked = false;
+    
+    achievements.forEach(achievement => {
+      if (!achievement.unlocked && achievement.condition(score, streak, timeLeft)) {
+        achievement.unlocked = true;
+        newAchievementUnlocked = true;
+        telegram.HapticFeedback.notificationOccurred('success');
+        showAchievementPopup(`Achievement Unlocked: ${achievement.name}`);
+      }
+    });
+  
+    if (newAchievementUnlocked) {
+      saveGameData(); // Save when new achievements are unlocked
     }
-  });
-}
+  }
 
 function createConfetti() {
   for (let i = 0; i < 100; i++) {
@@ -292,23 +299,74 @@ function updateGame() {
   spawnPowerUp();
 }
 
-function checkAnswer(selectedColor) {
-  if (!gameActive) return;
-  const correctColor = document.getElementById('colorText').dataset.correct;
-  if (selectedColor === correctColor) {
-    telegram.HapticFeedback.impactOccurred('light');
-    score += (1 * scoreMultiplier);
-    streak += 1;
-    if (streak > bestStreak) {
-      bestStreak = streak;
-    }
-    document.getElementById('score').textContent = score;
-    document.getElementById('streak').textContent = streak;
-    if (score > highScore) {
-      highScore = score;
+// Add these functions at the start of your script.js:
+
+const STORAGE_KEYS = {
+    HIGH_SCORE: 'colorMatch_highScore',
+    ACHIEVEMENTS: 'colorMatch_achievements',
+    BEST_STREAK: 'colorMatch_bestStreak'
+  };
+  
+  function loadGameData() {
+    // Load high score
+    const savedHighScore = localStorage.getItem(STORAGE_KEYS.HIGH_SCORE);
+    if (savedHighScore) {
+      highScore = parseInt(savedHighScore);
       document.getElementById('highScore').textContent = highScore;
     }
-  } else {
+  
+    // Load best streak
+    const savedBestStreak = localStorage.getItem(STORAGE_KEYS.BEST_STREAK);
+    if (savedBestStreak) {
+      bestStreak = parseInt(savedBestStreak);
+    }
+  
+    // Load achievements
+    const savedAchievements = localStorage.getItem(STORAGE_KEYS.ACHIEVEMENTS);
+    if (savedAchievements) {
+      const unlockedAchievements = JSON.parse(savedAchievements);
+      achievements.forEach(achievement => {
+        if (unlockedAchievements.includes(achievement.id)) {
+          achievement.unlocked = true;
+        }
+      });
+    }
+  }
+  
+  function saveGameData() {
+    // Save high score
+    localStorage.setItem(STORAGE_KEYS.HIGH_SCORE, highScore.toString());
+    
+    // Save best streak
+    localStorage.setItem(STORAGE_KEYS.BEST_STREAK, bestStreak.toString());
+    
+    // Save achievements
+    const unlockedAchievements = achievements
+      .filter(a => a.unlocked)
+      .map(a => a.id);
+    localStorage.setItem(STORAGE_KEYS.ACHIEVEMENTS, JSON.stringify(unlockedAchievements));
+  }
+  
+  // Update the checkAnswer function to save after new high score:
+  function checkAnswer(selectedColor) {
+    if (!gameActive) return;
+    const correctColor = document.getElementById('colorText').dataset.correct;
+    if (selectedColor === correctColor) {
+      telegram.HapticFeedback.impactOccurred('light');
+      score += (1 * scoreMultiplier);
+      streak += 1;
+      if (streak > bestStreak) {
+        bestStreak = streak;
+        saveGameData(); // Save when best streak is broken
+      }
+      document.getElementById('score').textContent = score;
+      document.getElementById('streak').textContent = streak;
+      if (score > highScore) {
+        highScore = score;
+        document.getElementById('highScore').textContent = highScore;
+        saveGameData(); // Save when high score is broken
+      }
+    } else {
     telegram.HapticFeedback.notificationOccurred('error');
     score = Math.max(0, score - 1);
     streak = 0;
@@ -384,6 +442,7 @@ function showGameOver() {
         bestStreak: bestStreak,
         achievements: achievements.filter(a => a.unlocked).map(a => a.id)
     }));
+    saveGameData();
 }
 
 function resetGame() {
@@ -416,6 +475,17 @@ function resetGame() {
         gameInterval = setInterval(updateTimer, 1000);
       }
 }
+
+function resetAllData() {
+    localStorage.removeItem(STORAGE_KEYS.HIGH_SCORE);
+    localStorage.removeItem(STORAGE_KEYS.ACHIEVEMENTS);
+    localStorage.removeItem(STORAGE_KEYS.BEST_STREAK);
+    highScore = 0;
+    bestStreak = 0;
+    achievements.forEach(a => a.unlocked = false);
+    document.getElementById('highScore').textContent = '0';
+  }
+
 
 function resetAndStartGame() {
     // Clear any existing interval
@@ -450,6 +520,20 @@ function resetAndStartGame() {
     resetGame();
 }
 
+function toggleStats() {
+    const modal = document.getElementById('statsModal');
+    if (modal.style.display === 'flex') {
+      modal.style.display = 'none';
+    } else {
+      document.getElementById('allTimeHighScore').textContent = highScore;
+      document.getElementById('allTimeBestStreak').textContent = bestStreak;
+      document.getElementById('achievementsCount').textContent = 
+        `${achievements.filter(a => a.unlocked).length}/${achievements.length}`;
+      modal.style.display = 'flex';
+    }
+  }
+
 
 // Initialize game
+loadGameData();
 createButtons();

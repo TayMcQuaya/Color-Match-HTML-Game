@@ -121,6 +121,28 @@
     <p id="achievementText"></p>
   </div>
 
+  <div class="modal" id="statsModal">
+    <div class="modal-content">
+      <button class="close-btn" onclick="toggleStats()">×</button>
+      <h2>All-Time Stats</h2>
+      <div class="stats-container">
+        <div class="stat-item">
+          <h4>Best Score Ever</h4>
+          <p id="allTimeHighScore">0</p>
+        </div>
+        <div class="stat-item">
+          <h4>Best Streak Ever</h4>
+          <p id="allTimeBestStreak">0</p>
+        </div>
+        <div class="stat-item">
+          <h4>Achievements Unlocked</h4>
+          <p id="achievementsCount">0/5</p>
+        </div>
+      </div>
+      <button class="utility-btn" onclick="resetAllData()">Reset All Data</button>
+    </div>
+  </div>
+
   <script src="script.js"></script>
 </body>
 </html>
