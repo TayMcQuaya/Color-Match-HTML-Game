@@ -321,60 +321,69 @@ function checkAnswer(selectedColor) {
 }
 
 function updateTimer() {
-  if (!gameActive) return;
-  timeLeft -= 1;
-  document.getElementById('timeLeft').textContent = timeLeft;
-  
-  if (timeLeft <= 0) {
-    clearInterval(gameInterval);
-    showGameOver();
-  }
+    if (!gameActive) return;
+    timeLeft -= 1;
+    if (timeLeft <= 0) {
+        timeLeft = 0;
+        document.getElementById('timeLeft').textContent = timeLeft;
+        clearInterval(gameInterval);
+        gameInterval = null;
+        showGameOver();
+        return;
+    }
+    document.getElementById('timeLeft').textContent = timeLeft;
 }
 
 function showGameOver() {
     gameActive = false;
     if (gameInterval) {
-      clearInterval(gameInterval);
-      gameInterval = null;
+        clearInterval(gameInterval);
+        gameInterval = null;
     }
-  const gameOver = document.getElementById('gameOver');
-  document.getElementById('finalScore').textContent = score;
-  document.getElementById('finalHighScore').textContent = highScore;
-  document.getElementById('bestStreak').textContent = bestStreak;
-  
-  const achievementsDiv = document.getElementById('gameOverAchievements');
-  achievementsDiv.innerHTML = '<h3>Achievements Unlocked This Game</h3>';
-  
-  const unlockedAchievements = achievements.filter(a => a.unlocked);
-  if (unlockedAchievements.length > 0) {
-    unlockedAchievements.forEach(achievement => {
-      const div = document.createElement('div');
-      div.className = 'achievement-item';
-      div.innerHTML = `
-        <div class="achievement-icon">🏆</div>
-        <div class="achievement-info">
-          <div class="achievement-name">${achievement.name}</div>
-          <div class="achievement-desc">${achievement.description}</div>
-        </div>
-      `;
-      achievementsDiv.appendChild(div);
-    });
-  } else {
-    achievementsDiv.innerHTML += '<p>No achievements unlocked yet. Keep trying!</p>';
-  }
-  
-  telegram.MainButton.setText('Play Again').show();
-  telegram.MainButton.onClick(() => resetAndStartGame());
-  gameOver.style.display = 'flex';
-  createConfetti();
-  
-  // Send score to bot if needed
-  telegram.sendData(JSON.stringify({
-    score: score,
-    highScore: highScore,
-    bestStreak: bestStreak,
-    achievements: achievements.filter(a => a.unlocked).map(a => a.id)
-  }));
+    timeLeft = 0; // Ensure timer shows 0 not negative
+    document.getElementById('timeLeft').textContent = timeLeft;
+    
+    const gameOver = document.getElementById('gameOver');
+    document.getElementById('finalScore').textContent = score;
+    document.getElementById('finalHighScore').textContent = highScore;
+    document.getElementById('bestStreak').textContent = bestStreak;
+    
+    const achievementsDiv = document.getElementById('gameOverAchievements');
+    achievementsDiv.innerHTML = '<h3>Achievements Unlocked This Game</h3>';
+    
+    const unlockedAchievements = achievements.filter(a => a.unlocked);
+    if (unlockedAchievements.length > 0) {
+        unlockedAchievements.forEach(achievement => {
+            const div = document.createElement('div');
+            div.className = 'achievement-item';
+            div.innerHTML = `
+                <div class="achievement-icon">🏆</div>
+                <div class="achievement-info">
+                    <div class="achievement-name">${achievement.name}</div>
+                    <div class="achievement-desc">${achievement.description}</div>
+                </div>
+            `;
+            achievementsDiv.appendChild(div);
+        });
+    } else {
+        achievementsDiv.innerHTML += '<p>No achievements unlocked yet. Keep trying!</p>';
+    }
+    
+    gameOver.style.display = 'flex';
+    createConfetti();
+    
+    // Setup MainButton for restart
+    telegram.MainButton.setText('Play Again').show();
+    telegram.MainButton.offClick(); // Remove previous click handlers
+    telegram.MainButton.onClick(resetAndStartGame);
+
+    // Send score to bot if needed
+    telegram.sendData(JSON.stringify({
+        score: score,
+        highScore: highScore,
+        bestStreak: bestStreak,
+        achievements: achievements.filter(a => a.unlocked).map(a => a.id)
+    }));
 }
 
 function resetGame() {
@@ -409,21 +418,37 @@ function resetGame() {
 }
 
 function resetAndStartGame() {
+    // Clear any existing interval
+    if (gameInterval) {
+        clearInterval(gameInterval);
+        gameInterval = null;
+    }
+    
+    // Reset game state
     gameActive = true;
+    
     // Reset timer based on difficulty
     switch(difficulty) {
-      case 'easy':
-        timeLeft = 40;
-        break;
-      case 'normal':
-        timeLeft = 30;
-        break;
-      case 'hard':
-        timeLeft = 25;
-        break;
+        case 'easy':
+            timeLeft = 40;
+            break;
+        case 'normal':
+            timeLeft = 30;
+            break;
+        case 'hard':
+            timeLeft = 25;
+            break;
     }
+    
+    // Hide game over screen
+    document.getElementById('gameOver').style.display = 'none';
+    
+    // Hide MainButton
+    telegram.MainButton.hide();
+    
+    // Reset the game
     resetGame();
-  }
+}
 
 
 // Initialize game
