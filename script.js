@@ -1,3 +1,8 @@
+// Initialize Telegram WebApp
+const telegram = window.Telegram.WebApp;
+telegram.ready();
+
+// Game variables
 const colors = ['red', 'blue', 'green', 'yellow', 'purple'];
 const colorHex = {
   red: '#ff0000',
@@ -17,6 +22,19 @@ let scoreMultiplier = 1;
 let difficulty = 'normal';
 let isRotating = false;
 let gameActive = false;
+
+// Set theme based on Telegram's theme
+if (telegram.colorScheme === 'dark') {
+  document.documentElement.setAttribute('data-theme', 'dark');
+}
+
+// Configure Telegram main button
+telegram.MainButton.setText('Start Game').show();
+telegram.MainButton.onClick(() => {
+  if (!gameActive) {
+    startGame();
+  }
+});
 
 const achievements = [
   { 
@@ -51,7 +69,7 @@ const achievements = [
     id: 'powerup_collector', 
     name: 'Power Player', 
     description: 'Collect both types of power-ups in one game',
-    condition: () => false, // Custom check in collectPowerUp
+    condition: () => false,
     unlocked: false 
   }
 ];
@@ -62,21 +80,57 @@ let collectedPowerups = {
 };
 
 function startGame() {
-  document.getElementById('welcomeScreen').style.display = 'none';
   gameActive = true;
+  telegram.MainButton.hide();
   resetGame();
 }
 
 function toggleHelp() {
   const modal = document.getElementById('helpModal');
-  modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
+  const isShowing = modal.style.display === 'flex';
+  modal.style.display = isShowing ? 'none' : 'flex';
+  
+  // Show back button when help is open
+  if (!isShowing) {
+    telegram.BackButton.show();
+  } else {
+    telegram.BackButton.hide();
+  }
 }
 
 function toggleAchievements() {
   const modal = document.getElementById('achievementsModal');
+  const isShowing = modal.style.display === 'flex';
   updateAchievementsList();
-  modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
+  modal.style.display = isShowing ? 'none' : 'flex';
+  
+  // Show back button when achievements are open
+  if (!isShowing) {
+    telegram.BackButton.show();
+  } else {
+    telegram.BackButton.hide();
+  }
 }
+
+// Handle back button
+telegram.BackButton.onClick(() => {
+  if (document.getElementById('helpModal').style.display === 'flex') {
+    toggleHelp();
+    return;
+  }
+  if (document.getElementById('achievementsModal').style.display === 'flex') {
+    toggleAchievements();
+    return;
+  }
+  // Ask before closing the game
+  if (gameActive) {
+    if (confirm('Are you sure you want to quit the game?')) {
+      telegram.close();
+    }
+  } else {
+    telegram.close();
+  }
+});
 
 function updateAchievementsList() {
   const list = document.getElementById('achievementsList');
@@ -115,6 +169,7 @@ function collectPowerUp(type) {
   const powerUp = document.querySelector('.power-up');
   if (powerUp) {
     collectedPowerups[type] = true;
+    telegram.HapticFeedback.impactOccurred('light');
     
     if (type === 'time') {
       timeLeft += 5;
@@ -178,6 +233,7 @@ function checkAchievements() {
   achievements.forEach(achievement => {
     if (!achievement.unlocked && achievement.condition(score, streak, timeLeft)) {
       achievement.unlocked = true;
+      telegram.HapticFeedback.notificationOccurred('success');
       showAchievementPopup(`Achievement Unlocked: ${achievement.name}`);
     }
   });
@@ -203,13 +259,6 @@ function createConfetti() {
 
     animation.onfinish = () => confetti.remove();
   }
-}
-
-function toggleTheme() {
-  const html = document.documentElement;
-  const currentTheme = html.getAttribute('data-theme');
-  const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-  html.setAttribute('data-theme', newTheme);
 }
 
 function createButtons() {
@@ -247,6 +296,7 @@ function checkAnswer(selectedColor) {
   if (!gameActive) return;
   const correctColor = document.getElementById('colorText').dataset.correct;
   if (selectedColor === correctColor) {
+    telegram.HapticFeedback.impactOccurred('light');
     score += (1 * scoreMultiplier);
     streak += 1;
     if (streak > bestStreak) {
@@ -259,6 +309,7 @@ function checkAnswer(selectedColor) {
       document.getElementById('highScore').textContent = highScore;
     }
   } else {
+    telegram.HapticFeedback.notificationOccurred('error');
     score = Math.max(0, score - 1);
     streak = 0;
     document.getElementById('score').textContent = score;
@@ -287,7 +338,6 @@ function showGameOver() {
   document.getElementById('finalHighScore').textContent = highScore;
   document.getElementById('bestStreak').textContent = bestStreak;
   
-  // Update achievements list with better styling
   const achievementsDiv = document.getElementById('gameOverAchievements');
   achievementsDiv.innerHTML = '<h3>Achievements Unlocked This Game</h3>';
   
@@ -309,24 +359,17 @@ function showGameOver() {
     achievementsDiv.innerHTML += '<p>No achievements unlocked yet. Keep trying!</p>';
   }
   
+  telegram.MainButton.setText('Play Again').show();
   gameOver.style.display = 'flex';
   createConfetti();
-}
-
-function resetAndStartGame() {
-  gameActive = true;
-  switch(difficulty) {
-    case 'easy':
-      timeLeft = 40;
-      break;
-    case 'normal':
-      timeLeft = 30;
-      break;
-    case 'hard':
-      timeLeft = 25;
-      break;
-  }
-  resetGame();
+  
+  // Send score to bot if needed
+  telegram.sendData(JSON.stringify({
+    score: score,
+    highScore: highScore,
+    bestStreak: bestStreak,
+    achievements: achievements.filter(a => a.unlocked).map(a => a.id)
+  }));
 }
 
 function resetGame() {
