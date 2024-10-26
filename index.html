@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Color Match Game</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Welcome Screen -->
+  <div class="welcome-screen" id="welcomeScreen">
+    <div class="welcome-content">
+      <h1>Welcome to Color Match!</h1>
+      <p>Match the COLOR of the text, not the word itself.</p>
+      <p>Ready to test your reflexes?</p>
+      <button class="start-btn" onclick="startGame()">Start Game</button>
+    </div>
+  </div>
+
+  <div class="game-container">
+    <!-- Header Buttons -->
+    <div class="header-buttons">
+      <button class="utility-btn" onclick="toggleHelp()">❓ How to Play</button>
+      <button class="utility-btn" onclick="toggleTheme()">🌓 Theme</button>
+      <button class="utility-btn" onclick="toggleAchievements()">🏆 Achievements</button>
+    </div>
+
+    <!-- Difficulty Section -->
+    <div class="difficulty-section">
+      <h3>Select Difficulty</h3>
+      <div class="difficulty-selector">
+        <button class="difficulty-btn" onclick="setDifficulty('easy')" style="background: #4CAF50">Beginner</button>
+        <button class="difficulty-btn active" onclick="setDifficulty('normal')" style="background: #2196F3">Normal</button>
+        <button class="difficulty-btn" onclick="setDifficulty('hard')" style="background: #f44336">Expert</button>
+      </div>
+    </div>
+
+    <div class="multiplier" id="multiplier">2x Points!</div>
+    <div class="color-text" id="colorText">Color</div>
+    <div class="buttons" id="buttons"></div>
+
+    <!-- Game Stats -->
+    <div class="game-stats">
+      <div class="stat-item">
+        <h4>Time Left</h4>
+        <p><span id="timeLeft">30</span>s</p>
+      </div>
+      <div class="stat-item">
+        <h4>Score</h4>
+        <p id="score">0</p>
+      </div>
+      <div class="stat-item">
+        <h4>Streak</h4>
+        <p id="streak">0</p>
+      </div>
+      <div class="stat-item">
+        <h4>High Score</h4>
+        <p id="highScore">0</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Help Modal -->
+  <div class="modal" id="helpModal">
+    <div class="modal-content">
+      <button class="close-btn" onclick="toggleHelp()">×</button>
+      <div class="help-section">
+        <h2>How to Play Color Match</h2>
+        
+        <h3>Basic Rules</h3>
+        <p>Your goal is to click the button that matches the COLOR of the text, not the word itself. For example, if the word "RED" is written in blue color, you should click the BLUE button.</p>
+        
+        <h3>Difficulty Levels</h3>
+        <ul>
+          <li><strong>Beginner:</strong> 40 seconds, normal text</li>
+          <li><strong>Normal:</strong> 30 seconds, normal text</li>
+          <li><strong>Expert:</strong> 25 seconds, rotating text</li>
+        </ul>
+
+        <h3>Power-ups</h3>
+        <ul>
+          <li><strong>⏰ Time Boost:</strong> Adds 5 seconds to your remaining time</li>
+          <li><strong>2️⃣ Score Multiplier:</strong> Doubles your points for 5 seconds</li>
+        </ul>
+
+        <h3>Scoring</h3>
+        <ul>
+          <li>Correct match: +1 point (or +2 with multiplier)</li>
+          <li>Wrong match: -1 point</li>
+          <li>Maintain streaks for higher scores!</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Achievements Modal -->
+  <div class="modal" id="achievementsModal">
+    <div class="modal-content">
+      <button class="close-btn" onclick="toggleAchievements()">×</button>
+      <h2>Achievements</h2>
+      <div id="achievementsList"></div>
+    </div>
+  </div>
+
+  <!-- Game Over Modal -->
+  <div class="modal" id="gameOver">
+    <div class="modal-content game-over-content">
+      <h2 class="game-over-title">🎮 Game Over! 🎮</h2>
+      <p class="game-over-subtitle">Great effort! Here's how you did:</p>
+      <div class="game-stats">
+        <div class="stat-item">
+          <h4>Final Score</h4>
+          <p id="finalScore">0</p>
+        </div>
+        <div class="stat-item">
+          <h4>Best Streak</h4>
+          <p id="bestStreak">0</p>
+        </div>
+        <div class="stat-item">
+          <h4>High Score</h4>
+          <p id="finalHighScore">0</p>
+        </div>
+      </div>
+      <div id="gameOverAchievements" class="game-over-achievements"></div>
+      <button class="start-btn play-again-btn" onclick="resetAndStartGame()">Play Again</button>
+    </div>
+  </div>
+
+  <!-- Achievement Popup -->
+  <div class="achievements-popup" id="achievementPopup">
+    <h3>🏆 Achievement Unlocked!</h3>
+    <p id="achievementText"></p>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
