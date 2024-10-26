@@ -332,7 +332,11 @@ function updateTimer() {
 }
 
 function showGameOver() {
-  gameActive = false;
+    gameActive = false;
+    if (gameInterval) {
+      clearInterval(gameInterval);
+      gameInterval = null;
+    }
   const gameOver = document.getElementById('gameOver');
   document.getElementById('finalScore').textContent = score;
   document.getElementById('finalHighScore').textContent = highScore;
@@ -360,6 +364,7 @@ function showGameOver() {
   }
   
   telegram.MainButton.setText('Play Again').show();
+  telegram.MainButton.onClick(() => resetAndStartGame());
   gameOver.style.display = 'flex';
   createConfetti();
   
@@ -373,27 +378,53 @@ function showGameOver() {
 }
 
 function resetGame() {
-  score = 0;
-  streak = 0;
-  scoreMultiplier = 1;
-  collectedPowerups = { time: false, multiplier: false };
+    if (gameInterval) {
+      clearInterval(gameInterval);
+      gameInterval = null;
+    }
+    
+    score = 0;
+    streak = 0;
+    scoreMultiplier = 1;
+    collectedPowerups = { time: false, multiplier: false };
+    
+    // Reset UI elements
+    document.getElementById('score').textContent = score;
+    document.getElementById('streak').textContent = streak;
+    document.getElementById('timeLeft').textContent = timeLeft;
+    document.getElementById('multiplier').style.display = 'none';
+    document.getElementById('gameOver').style.display = 'none';
+    document.querySelector('.color-text').style.transform = 'none';
+    
+    // Remove any existing power-ups
+    const powerUp = document.querySelector('.power-up');
+    if (powerUp) powerUp.remove();
+    
+    createButtons();
+    updateGame();
   
-  document.getElementById('score').textContent = score;
-  document.getElementById('streak').textContent = streak;
-  document.getElementById('timeLeft').textContent = timeLeft;
-  document.getElementById('multiplier').style.display = 'none';
-  document.getElementById('gameOver').style.display = 'none';
-  document.querySelector('.color-text').style.transform = 'none';
-  
-  const powerUp = document.querySelector('.power-up');
-  if (powerUp) powerUp.remove();
-  
-  createButtons();
-  updateGame();
-  
-  if (gameInterval) clearInterval(gameInterval);
-  if (gameActive) gameInterval = setInterval(updateTimer, 1000);
+    if (gameActive) {
+        gameInterval = setInterval(updateTimer, 1000);
+      }
 }
+
+function resetAndStartGame() {
+    gameActive = true;
+    // Reset timer based on difficulty
+    switch(difficulty) {
+      case 'easy':
+        timeLeft = 40;
+        break;
+      case 'normal':
+        timeLeft = 30;
+        break;
+      case 'hard':
+        timeLeft = 25;
+        break;
+    }
+    resetGame();
+  }
+
 
 // Initialize game
 createButtons();
